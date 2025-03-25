@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Atestados - Funcionário</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            background: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+        h1 {
+            color: #ff6200;
+            margin-bottom: 20px;
+            font-size: clamp(20px, 5vw, 28px);
+            font-weight: 600;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            text-align: left;
+            font-weight: 500;
+            font-size: clamp(14px, 3vw, 16px);
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: clamp(14px, 3vw, 16px);
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #ff6200;
+            outline: none;
+            box-shadow: 0 0 5px rgba(255, 98, 0, 0.3);
+        }
+        #anexo { margin: 10px 0; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #ff6200;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: clamp(14px, 3vw, 16px);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background: #e65500; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+        }
+        #fotoFuncionario {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 10px auto;
+            object-fit: cover;
+            border: 2px solid #ff6200;
+        }
+        #videoContainer {
+            position: relative;
+            width: clamp(200px, 80vw, 300px);
+            height: clamp(200px, 80vw, 300px);
+            margin: 10px auto;
+            overflow: hidden;
+            border-radius: 50%;
+            border: 2px solid #ff6200;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        #progressBarContainer {
+            width: 100%;
+            max-width: 300px;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            margin: 10px auto;
+            overflow: hidden;
+        }
+        #progressBar {
+            height: 100%;
+            width: 0;
+            background: #ff6200;
+            transition: width 0.3s ease;
+        }
+        #validacaoStatus {
+            font-size: clamp(14px, 3vw, 18px);
+            margin: 10px 0;
+            color: #555;
+            word-wrap: break-word;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .modal-buttons button {
+            width: clamp(100px, 40%, 120px);
+            padding: 10px;
+        }
+        #cancelarBtn, #negarBtn {
+            background: #ff4444;
+        }
+        #cancelarBtn:hover, #negarBtn:hover {
+            background: #cc3333;
+        }
+        #formAnexo { display: none; }
+        #enviarAtestadoBtn { display: none; }
+        @media (max-width: 480px) {
+            .container { padding: 15px; }
+            .modal-content { margin: 5% auto; padding: 15px; }
+            #videoContainer { width: 80vw; height: 80vw; }
+            #fotoFuncionario { width: 80px; height: 80px; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enviar Atestado Médico</h1>
+        <form id="cpfForm">
+            <label for="cpf">CPF:</label>
+            <input type="text" id="cpf" placeholder="Digite seu CPF (somente números)" required maxlength="11">
+            <button type="submit">Continuar</button>
+        </form>
+        <form id="formAnexo">
+            <label for="anexo">Anexo (PDF ou Foto):</label>
+            <input type="file" id="anexo" accept=".pdf,image/*" required>
+            <button type="button" id="iniciarValidacaoBtn">Iniciar Validação Facial</button>
+            <button type="button" id="enviarAtestadoBtn">Enviar Atestado</button>
+        </form>
+    </div>
+
+    <div id="confirmacaoModal" class="modal">
+        <div class="modal-content">
+            <h2>Confirmação</h2>
+            <img id="fotoFuncionario" src="" alt="Foto do Funcionário" style="display: none;">
+            <p id="confirmacaoTexto"></p>
+            <div class="modal-buttons">
+                <button id="confirmarBtn">Sim, sou eu</button>
+                <button id="negarBtn">Não, não sou eu</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="validacaoModal" class="modal">
+        <div class="modal-content">
+            <h2>Validação Facial</h2>
+            <p id="modalMessage">Enquadre seu rosto no círculo e espere 5 segundos ou clique em "Capturar".</p>
+            <div id="videoContainer">
+                <video id="video" autoplay muted playsinline></video>
+            </div>
+            <div id="progressBarContainer">
+                <div id="progressBar"></div>
+            </div>
+            <div id="validacaoStatus">Aguardando enquadramento...</div>
+            <div class="modal-buttons">
+                <button id="capturarBtn">Capturar</button>
+                <button id="cancelarBtn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@0.0.3/dist/face-landmarks-detection.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getDatabase, ref, onValue, push, update } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCI5Yu44ELqn-cE5iUO8EGYpGRoc7TQAHE",
+            authDomain: "chatberga.firebaseapp.com",
+            databaseURL: "https://chatberga-default-rtdb.firebaseio.com",
+            projectId: "chatberga",
+            storageBucket: "chatberga.firebasestorage.app",
+            messagingSenderId: "49874574261",
+            appId: "1:49874574261:web:d17081b204e6d87f2dd7fc",
+            measurementId: "G-FTCSBDEF52"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        const storage = getStorage(app);
+
+        const video = document.getElementById('video');
+        const progressBar = document.getElementById('progressBar');
+        const capturarBtn = document.getElementById('capturarBtn');
+        const cancelarBtn = document.getElementById('cancelarBtn');
+        const iniciarValidacaoBtn = document.getElementById('iniciarValidacaoBtn');
+        const enviarAtestadoBtn = document.getElementById('enviarAtestadoBtn');
+        let dadosAtestado = {};
+        let stream;
+        let timer;
+        let model;
+        let funcionarioId;
+        let rostoBase64;
+
+        // Autenticação automática
+        const email = "atestadosberga@bergamini.com.br";
+        const password = "Dilma123@";
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => console.log("Autenticado como:", userCredential.user.uid))
+            .catch((error) => {
+                console.error("Erro ao autenticar:", error.message);
+                alert("Erro de autenticação: " + error.message);
+            });
+
+        // Validação do CPF
+        document.getElementById('cpfForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const cpf = document.getElementById('cpf').value.trim().replace(/\D/g, '');
+            console.log("CPF digitado:", cpf);
+            if (cpf.length !== 11) {
+                alert("Digite um CPF válido com 11 dígitos!");
+                return;
+            }
+            buscarFuncionarioPorCpf(cpf);
+        });
+
+        function buscarFuncionarioPorCpf(cpf) {
+            const funcionariosRef = ref(db, 'funcionarios');
+            onValue(funcionariosRef, (snapshot) => {
+                const funcionarios = snapshot.val();
+                if (!funcionarios) {
+                    alert("Nenhum funcionário cadastrado!");
+                    console.log("Nenhum funcionário encontrado.");
+                    return;
+                }
+                let encontrado = false;
+                Object.entries(funcionarios).forEach(([id, func]) => {
+                    if (func.cpf === cpf) {
+                        encontrado = true;
+                        funcionarioId = id;
+                        dadosAtestado = {
+                            nome: func.nome,
+                            setor: func.setor,
+                            loja: func.loja,
+                            cpf,
+                            foto: func.foto || '',
+                            dataEnvio: new Date().toISOString().split('T')[0]
+                        };
+                        console.log("Funcionário encontrado:", dadosAtestado);
+                        const fotoElement = document.getElementById('fotoFuncionario');
+                        if (dadosAtestado.foto) {
+                            fotoElement.src = dadosAtestado.foto;
+                            fotoElement.style.display = 'block';
+                        } else {
+                            fotoElement.style.display = 'none';
+                        }
+                        document.getElementById('confirmacaoTexto').textContent = 
+                            `Você é ${func.nome} do setor ${func.setor}?`;
+                        document.getElementById('confirmacaoModal').style.display = 'block';
+                    }
+                });
+                if (!encontrado) {
+                    alert("Funcionário não encontrado!");
+                    console.log("Funcionário não encontrado para CPF:", cpf);
+                }
+            }, (error) => {
+                console.error("Erro ao buscar:", error);
+                alert("Erro ao buscar funcionário: " + error.message);
+            });
+        }
+
+        document.getElementById('confirmarBtn').addEventListener('click', () => {
+            console.log("Confirmação: Sim, sou eu.");
+            document.getElementById('confirmacaoModal').style.display = 'none';
+            document.getElementById('cpfForm').style.display = 'none';
+            document.getElementById('formAnexo').style.display = 'block';
+        });
+
+        document.getElementById('negarBtn').addEventListener('click', () => {
+            console.log("Confirmação: Não, não sou eu.");
+            document.getElementById('confirmacaoModal').style.display = 'none';
+            document.getElementById('cpf').value = '';
+            dadosAtestado = {};
+            document.getElementById('fotoFuncionario').style.display = 'none';
+        });
+
+        // Iniciar validação facial
+        iniciarValidacaoBtn.addEventListener('click', () => {
+            const anexo = document.getElementById('anexo').files[0];
+            if (!anexo) {
+                alert("Selecione um arquivo!");
+                console.log("Nenhum anexo selecionado.");
+                return;
+            }
+            dadosAtestado.anexo = anexo;
+            console.log("Iniciando validação facial...");
+            iniciarValidacaoFacial();
+        });
+
+        async function iniciarValidacaoFacial() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+                document.getElementById('validacaoModal').style.display = 'block';
+                if (!model) {
+                    model = await faceLandmarksDetection.load(
+                        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
+                    );
+                    console.log("Modelo de detecção facial carregado.");
+                }
+                iniciarTimer();
+                detectarRosto();
+            } catch (error) {
+                console.error("Erro ao acessar câmera:", error);
+                alert("Erro ao acessar câmera: " + error.message);
+            }
+        }
+
+        function iniciarTimer() {
+            clearTimeout(timer);
+            progressBar.style.transition = 'width 5s linear';
+            progressBar.style.width = '100%';
+            console.log("Timer iniciado: 5 segundos para captura.");
+            timer = setTimeout(() => verificarECapturarRosto(), 5000);
+
+            capturarBtn.onclick = () => {
+                clearTimeout(timer);
+                console.log("Captura manual solicitada.");
+                verificarECapturarRosto();
+            };
+            cancelarBtn.onclick = fecharModal;
+        }
+
+        async function detectarRosto() {
+            const detect = async () => {
+                const faces = await model.estimateFaces({ input: video });
+                if (faces.length === 1) {
+                    const face = faces[0];
+                    const { width, height } = video.getBoundingClientRect();
+                    const faceCenterX = face.boundingBox.topLeft[0] + (face.boundingBox.bottomRight[0] - face.boundingBox.topLeft[0]) / 2;
+                    const faceCenterY = face.boundingBox.topLeft[1] + (face.boundingBox.bottomRight[1] - face.boundingBox.topLeft[1]) / 2;
+
+                    if (faceCenterX > width * 0.3 && faceCenterX < width * 0.7 &&
+                        faceCenterY > height * 0.3 && faceCenterY < height * 0.7) {
+                        document.getElementById('validacaoStatus').textContent = "Rosto enquadrado! Capturando em breve...";
+                        document.getElementById('validacaoStatus').style.color = "#28a745";
+                    } else {
+                        document.getElementById('validacaoStatus').textContent = "Ajuste seu rosto no círculo.";
+                        document.getElementById('validacaoStatus').style.color = "#555";
+                    }
+                } else {
+                    document.getElementById('validacaoStatus').textContent = "Nenhum rosto ou mais de um detectado.";
+                    document.getElementById('validacaoStatus').style.color = "#ff4444";
+                }
+                requestAnimationFrame(detect);
+            };
+            detect();
+        }
+
+        async function verificarECapturarRosto() {
+            const faces = await model.estimateFaces({ input: video });
+            if (faces.length === 1) {
+                const face = faces[0];
+                const { width, height } = video.getBoundingClientRect();
+                const faceCenterX = face.boundingBox.topLeft[0] + (face.boundingBox.bottomRight[0] - face.boundingBox.topLeft[0]) / 2;
+                const faceCenterY = face.boundingBox.topLeft[1] + (face.boundingBox.bottomRight[1] - face.boundingBox.topLeft[1]) / 2;
+
+                if (faceCenterX > width * 0.3 && faceCenterX < width * 0.7 &&
+                    faceCenterY > height * 0.3 && faceCenterY < height * 0.7) {
+                    capturarRosto();
+                } else {
+                    document.getElementById('validacaoStatus').textContent = "Rosto fora do enquadramento. Tente novamente.";
+                    document.getElementById('validacaoStatus').style.color = "#ff4444";
+                    console.log("Rosto fora do enquadramento, reiniciando timer.");
+                    setTimeout(iniciarTimer, 1000);
+                }
+            } else {
+                document.getElementById('validacaoStatus').textContent = "Nenhum rosto detectado. Tente novamente.";
+                document.getElementById('validacaoStatus').style.color = "#ff4444";
+                console.log("Nenhum rosto detectado, reiniciando timer.");
+                setTimeout(iniciarTimer, 1000);
+            }
+        }
+
+        function capturarRosto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            rostoBase64 = canvas.toDataURL();
+            console.log("Rosto capturado com sucesso!");
+            fecharModal();
+            enviarAtestadoBtn.style.display = 'block';
+            iniciarValidacaoBtn.style.display = 'none';
+        }
+
+        enviarAtestadoBtn.addEventListener('click', () => {
+            if (!rostoBase64) {
+                alert("Capture o rosto antes de enviar!");
+                console.log("Tentativa de envio sem captura de rosto.");
+                return;
+            }
+            console.log("Iniciando envio do atestado...");
+            enviarAtestado(rostoBase64);
+        });
+
+        async function enviarAtestado(rostoBase64) {
+            try {
+                document.getElementById('validacaoModal').style.display = 'block';
+                document.getElementById('modalMessage').textContent = "Enviando atestado...";
+                document.getElementById('validacaoStatus').textContent = "";
+                capturarBtn.style.display = 'none';
+                cancelarBtn.style.display = 'none';
+                progressBar.style.transition = 'width 3s ease';
+                progressBar.style.width = '100%';
+
+                const fileRef = storageRef(storage, `atestados/${dadosAtestado.setor}/${Date.now()}_${dadosAtestado.anexo.name}`);
+                console.log("Fazendo upload do anexo para:", fileRef.fullPath);
+                const uploadResult = await uploadBytes(fileRef, dadosAtestado.anexo);
+                const url = await getDownloadURL(uploadResult.ref);
+                console.log("Anexo enviado com sucesso, URL:", url);
+
+                const atestadoData = {
+                    nome: dadosAtestado.nome,
+                    setor: dadosAtestado.setor,
+                    loja: dadosAtestado.loja,
+                    data_envio: dadosAtestado.dataEnvio,
+                    rosto: rostoBase64,
+                    anexo: url,
+                    cpf: dadosAtestado.cpf
+                };
+
+                const atestadosRef = ref(db, 'atestados');
+                console.log("Salvando em /atestados...");
+                const newAtestadoRef = await push(atestadosRef, atestadoData);
+                console.log("Atestado salvo em /atestados com ID:", newAtestadoRef.key);
+
+                const funcionarioRef = ref(db, `funcionarios/${funcionarioId}/atestados`);
+                console.log("Salvando em /funcionarios/", funcionarioId, "/atestados...");
+                await update(funcionarioRef, { [newAtestadoRef.key]: atestadoData });
+                console.log("Atestado salvo no funcionário com sucesso!");
+
+                setTimeout(() => {
+                    alert("Atestado enviado com sucesso!");
+                    resetarFormulario();
+                }, 3000);
+            } catch (error) {
+                console.error("Erro ao enviar atestado:", error);
+                alert(`Erro ao enviar: ${error.message} (Verifique permissões no Firebase Database e Storage)`);
+                fecharModal();
+            }
+        }
+
+        function fecharModal() {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            document.getElementById('validacaoModal').style.display = 'none';
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0';
+            document.getElementById('modalMessage').textContent = "Enquadre seu rosto no círculo e espere 5 segundos ou clique em 'Capturar'.";
+            document.getElementById('validacaoStatus').textContent = "Aguardando enquadramento...";
+            capturarBtn.style.display = 'inline-block';
+            cancelarBtn.style.display = 'inline-block';
+            console.log("Modal de validação fechado.");
+        }
+
+        function resetarFormulario() {
+            document.getElementById('cpfForm').style.display = 'block';
+            document.getElementById('formAnexo').style.display = 'none';
+            document.getElementById('cpfForm').reset();
+            document.getElementById('formAnexo').reset();
+            enviarAtestadoBtn.style.display = 'none';
+            iniciarValidacaoBtn.style.display = 'block';
+            rostoBase64 = null;
+            fecharModal();
+            console.log("Formulário resetado.");
+        }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('validacaoModal')) {
+                clearTimeout(timer);
+                fecharModal();
+            }
+            if (e.target === document.getElementById('confirmacaoModal')) {
+                document.getElementById('confirmacaoModal').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
